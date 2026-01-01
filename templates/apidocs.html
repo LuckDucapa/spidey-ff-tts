@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="bg-indigo-600 rounded-3xl p-10 text-white mb-10 shadow-xl">
+        <h1 class="text-4xl font-bold mb-2">API Documentation</h1>
+        <p class="opacity-80">Integrate SonicTTS into your apps via HTTP Requests.</p>
+    </div>
+
+    <!-- Endpoints List -->
+    <div class="space-y-6">
+
+        <!-- 1. Specific Voice -->
+        <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">1. Specific Voice Match</h3>
+            <p class="text-gray-500 text-sm mb-4">Use a character name like 'Adri', 'Guy', 'Aria'.</p>
+            
+            <div class="relative group">
+                <pre class="bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto text-sm font-mono" id="c1">GET /tts?text=Hello World&voice=Adri</pre>
+                <button onclick="copyToClip('c1')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white p-2 rounded transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. Smart Filters -->
+        <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">2. Smart Filtering</h3>
+            <p class="text-gray-500 text-sm mb-4">Filter by Language, Gender, and optional Country.</p>
+            
+            <div class="relative group mb-2">
+                <pre class="bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto text-sm font-mono" id="c2">GET /tts?text=Namaste&lang=hi&gender=Female</pre>
+                <button onclick="copyToClip('c2')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white p-2 rounded transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Speed Control -->
+        <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">3. Speed/Rate Control</h3>
+            <p class="text-gray-500 text-sm mb-4">Control speaking speed (e.g., +50%, -20%). Default is +0%.</p>
+            
+            <div class="relative group">
+                <pre class="bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto text-sm font-mono" id="c3">GET /tts?text=Too Fast!&voice=Guy&rate=-30%</pre>
+                <button onclick="copyToClip('c3')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white p-2 rounded transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. Full Locale -->
+        <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">4. Country/Accent Specific</h3>
+            <p class="text-gray-500 text-sm mb-4">Target a specific country code (e.g., GB, IN, US).</p>
+            
+            <div class="relative group">
+                <pre class="bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto text-sm font-mono" id="c4">GET /tts?text=Cheers mate&lang=en&country=GB</pre>
+                <button onclick="copyToClip('c4')" class="absolute top-2 right-2 bg-white/20 hover:bg-white/40 text-white p-2 rounded transition">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-gray-200 my-12"></div>
+
+    <!-- Credits / Contact Section -->
+    <div class="text-center pb-10 space-y-4">
+        <div class="inline-block bg-white px-8 py-6 rounded-2xl shadow-lg border border-indigo-100">
+            <p class="text-lg font-bold text-gray-800 mb-2">
+                Created By: <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ƬᏞㅤSᴘɪᴅʏㅤꪶꫂ</span>
+            </p>
+            
+            <a href="https://t.me/spidey_abd" target="_blank" class="flex items-center justify-center gap-2 text-gray-600 hover:text-indigo-600 transition duration-200 mb-1">
+                <i class="fab fa-telegram text-xl text-blue-500"></i>
+                <span class="font-medium">Telegram: @spidey_abd</span>
+            </a>
+            
+            <a href="mailto:spidyabd07@gmail.com" class="flex items-center justify-center gap-2 text-gray-600 hover:text-red-500 transition duration-200">
+                <i class="fas fa-envelope text-xl text-red-400"></i>
+                <span class="font-medium">Email: spidyabd07@gmail.com</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function copyToClip(id) {
+        const text = document.getElementById(id).innerText.replace('GET ', '');
+        const fullURL = window.location.origin + text;
+        navigator.clipboard.writeText(fullURL);
+        alert("Copied Endpoint: " + fullURL);
+    }
+</script>
+{% endblock %}

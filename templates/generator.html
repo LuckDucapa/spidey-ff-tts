@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-8 animate-fade-in-up">
+    
+    <!-- Generator Form -->
+    <div class="w-full lg:w-2/3">
+        <div class="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Generate Speech</h1>
+            
+            <form id="ttsForm" class="space-y-6">
+                <div class="relative">
+                    <textarea name="text" id="textInput" rows="5" class="w-full p-4 rounded-xl bg-gray-50 border-2 border-gray-100 focus:border-indigo-500 focus:ring-0 outline-none text-lg resize-none placeholder-gray-400" placeholder="Type here..."></textarea>
+                    <button type="button" id="micBtn" class="absolute bottom-4 right-4 text-gray-400 hover:text-red-500 transition">
+                        <i class="fas fa-microphone text-2xl"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Voice</label>
+                        <select name="voice" id="voiceSelect" class="w-full mt-2 p-3 rounded-xl bg-gray-50 border-r-8 border-transparent outline-none cursor-pointer">
+                            {% for v in voices %}
+                            <option value="{{ v.id }}">
+                                {{ v.flag }} {{ v.name }} ({{ v.gender }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Speed</label>
+                        <div class="mt-2 bg-gray-50 p-3 rounded-xl flex items-center h-[50px]">
+                            <span class="text-xs mr-2">🐢</span>
+                            <input type="range" name="rate" min="-50" max="50" value="0" class="w-full accent-indigo-600">
+                            <span class="text-xs ml-2">🐇</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="genBtn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 transition transform active:scale-95 flex justify-center items-center gap-2">
+                    <span>Create Audio</span>
+                    <i class="fas fa-magic"></i>
+                </button>
+            </form>
+
+            <div id="playerContainer" class="hidden mt-8 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-indigo-900">Audio Ready</span>
+                    <a id="dlLink" class="text-xs bg-white px-3 py-1 rounded shadow-sm text-indigo-600 font-bold cursor-pointer">Download</a>
+                </div>
+                <audio id="audioPlayer" controls class="w-full"></audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local Storage History Panel -->
+    <div class="w-full lg:w-1/3">
+        <div class="bg-white rounded-3xl shadow-lg p-6 h-full border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-700"><i class="fas fa-history mr-2"></i> History</h2>
+                <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-600 underline">Clear</button>
+            </div>
+            
+            <div id="historyList" class="space-y-3 overflow-y-auto max-h-[500px] pr-2 custom-scroll">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credits / Contact Section -->
+<div class="mt-12 text-center pb-6">
+    <div class="inline-block bg-white px-8 py-6 rounded-2xl shadow-lg border border-indigo-100">
+        <p class="text-lg font-bold text-gray-800 mb-2">
+            Created By: <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ƬᏞㅤSᴘɪᴅʏㅤꪶꫂ</span>
+        </p>
+        
+        <a href="https://t.me/spidey_abd" target="_blank" class="flex items-center justify-center gap-2 text-gray-600 hover:text-indigo-600 transition duration-200 mb-1">
+            <i class="fab fa-telegram text-xl text-blue-500"></i>
+            <span class="font-medium">Telegram: @spidey_abd</span>
+        </a>
+        
+        <a href="mailto:spidyabd07@gmail.com" class="flex items-center justify-center gap-2 text-gray-600 hover:text-red-500 transition duration-200">
+            <i class="fas fa-envelope text-xl text-red-400"></i>
+            <span class="font-medium">Email: spidyabd07@gmail.com</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('ttsForm');
+    const textInput = document.getElementById('textInput');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const genBtn = document.getElementById('genBtn');
+    const historyList = document.getElementById('historyList');
+
+    // --- HISTORY SYSTEM (LOCAL STORAGE) ---
+    function loadHistory() {
+        const history = JSON.parse(localStorage.getItem('sonic_history') || '[]');
+        if (history.length === 0) {
+            historyList.innerHTML = '<div class="text-center text-gray-400 mt-10">No history yet.</div>';
+            return;
+        }
+        
+        historyList.innerHTML = history.map((item, index) => `
+            <div onclick="restoreHistory(${index})" 
+                 class="cursor-pointer p-3 rounded-xl bg-gray-50 border border-gray-100 hover:bg-indigo-50 hover:border-indigo-200 transition group relative">
+                <p class="text-sm font-bold text-gray-800 line-clamp-2">"${item.text}"</p>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-gray-400">${item.date} • ${item.voiceName}</span>
+                    <i class="fas fa-play text-indigo-500 opacity-0 group-hover:opacity-100"></i>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function saveToHistory(text, voiceId) {
+        const history = JSON.parse(localStorage.getItem('sonic_history') || '[]');
+        const voiceName = document.querySelector(`option[value="${voiceId}"]`).text.split('—')[1] || 'Voice';
+        
+        const newItem = {
+            text: text,
+            voiceId: voiceId,
+            voiceName: voiceName.split('(')[0].trim(),
+            date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+        
+        history.unshift(newItem);
+        if (history.length > 20) history.pop(); // Keep max 20
+        localStorage.setItem('sonic_history', JSON.stringify(history));
+        loadHistory();
+    }
+
+    function restoreHistory(index) {
+        const history = JSON.parse(localStorage.getItem('sonic_history') || '[]');
+        const item = history[index];
+        textInput.value = item.text;
+        voiceSelect.value = item.voiceId;
+        genBtn.click(); // Auto generate
+    }
+
+    function clearHistory() {
+        if(confirm("Clear all history?")) {
+            localStorage.removeItem('sonic_history');
+            loadHistory();
+        }
+    }
+
+    // Load history on page load
+    loadHistory();
+
+    // --- FORM HANDLING ---
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!textInput.value.trim()) {
+            alert("⚠️ Please enter text first!");
+            textInput.focus();
+            return;
+        }
+
+        genBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+        genBtn.disabled = true;
+
+        const fd = new FormData(form);
+        const rate = fd.get('rate');
+        fd.set('rate', (rate >= 0 ? '+' : '') + rate + '%');
+
+        try {
+            const res = await fetch('/tts', { method: 'POST', body: fd });
+            if(res.ok){
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const player = document.getElementById('audioPlayer');
+                
+                player.src = url;
+                document.getElementById('dlLink').href = url;
+                document.getElementById('dlLink').download = `voice_${Date.now()}.mp3`;
+                document.getElementById('playerContainer').classList.remove('hidden');
+                player.play();
+
+                // Save to Local Storage
+                saveToHistory(textInput.value, voiceSelect.value);
+            } else {
+                alert("Server Error. Please try again.");
+            }
+        } catch(err) { alert("Network Error"); }
+        
+        genBtn.innerHTML = 'Create Audio <i class="fas fa-magic"></i>';
+        genBtn.disabled = false;
+    };
+
+    // Mic
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        document.getElementById('micBtn').onclick = () => { recognition.start(); }
+        recognition.onresult = (e) => { textInput.value += e.results[0][0].transcript; }
+    }
+</script>
+{% endblock %}

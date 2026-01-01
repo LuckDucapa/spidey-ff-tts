@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicTTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+    
+    <!-- DOMAIN LOCK SCRIPT -->
+    <script>
+        (function() {
+            const allowedDomains = ["spidey-ff-tts.vercel.app", "0.0.0.0", "127.0.0.1", "localhost"];
+            const currentDomain = window.location.hostname;
+            
+            // Check if current domain is allowed
+            if (!allowedDomains.includes(currentDomain)) {
+                document.documentElement.innerHTML = `
+                    <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#000;color:red;font-family:sans-serif;text-align:center;">
+                        <div>
+                            <h1 style="font-size:5rem;margin:0;">⚠️</h1>
+                            <h1 style="font-size:3rem;margin:20px 0;">You Are A Thief</h1>
+                            <p style="color:white;">This code is licensed to Spidey. Deployment elsewhere is prohibited.</p>
+                        </div>
+                    </div>
+                `;
+                throw new Error("Domain not authorized.");
+            }
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <nav class="fixed top-0 w-full glass-nav z-50 h-16 flex items-center justify-between px-6">
+        <a href="/" class="text-2xl font-bold gradient-text flex items-center gap-2">
+            <i class="fas fa-wave-square"></i> SonicTTS
+        </a>
+
+        <button id="menuBtn" class="text-gray-600 hover:text-indigo-600 transition">
+            <i class="fas fa-bars text-2xl"></i>
+        </button>
+
+        <div id="dropdown" class="absolute top-16 right-4 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden">
+            <div class="p-2">
+                <a href="/" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3">
+                    <i class="fas fa-microphone-alt w-5"></i> Generator
+                </a>
+                <a href="/voices" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3">
+                    <i class="fas fa-users w-5"></i> Voice Gallery
+                </a>
+                <a href="/languages" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3">
+                    <i class="fas fa-globe w-5"></i> Languages
+                </a>
+                <a href="/api-docs" class="block px-4 py-3 rounded-lg hover:bg-gray-50 flex items-center gap-3">
+                    <i class="fas fa-code w-5"></i> APIs
+                </a>
+                <!-- Admin button removed from UI as requested -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="h-20"></div>
+
+    <main class="px-4 pb-10 max-w-7xl mx-auto">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        const btn = document.getElementById('menuBtn');
+        const menu = document.getElementById('dropdown');
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGen Neural TTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        .tab-active {
+            border-bottom: 3px solid #4f46e5;
+            color: #4f46e5;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div class="glass-panel w-full max-w-4xl rounded-3xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto animate-fade-in-up">
+        
+        <!-- Sidebar / Menu -->
+        <div class="w-full md:w-1/3 bg-white/50 p-6 flex flex-col justify-between border-r border-white/40">
+            <div>
+                <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 mb-2">
+                    <i class="fas fa-wave-square"></i> Sonic<span class="text-gray-700">TTS</span>
+                </h1>
+                <p class="text-sm text-gray-500 mb-8 font-medium">No API Keys. Pure Neural Audio.</p>
+
+                <nav class="space-y-3">
+                    <button onclick="switchTab('gen')" id="tab-gen" class="w-full text-left p-3 rounded-xl transition bg-indigo-100 text-indigo-700 font-bold flex items-center gap-3">
+                        <i class="fas fa-microphone-alt"></i> Generator
+                    </button>
+                    <button onclick="switchTab('hist')" id="tab-hist" class="w-full text-left p-3 rounded-xl transition hover:bg-white/60 text-gray-600 font-semibold flex items-center gap-3">
+                        <i class="fas fa-history"></i> History
+                    </button>
+                    <a href="/voices" class="w-full block p-3 rounded-xl transition hover:bg-white/60 text-gray-600 font-semibold flex items-center gap-3">
+                        <i class="fas fa-users"></i> Voice Gallery
+                    </a>
+                    <a href="/languages" class="w-full block p-3 rounded-xl transition hover:bg-white/60 text-gray-600 font-semibold flex items-center gap-3">
+                        <i class="fas fa-globe"></i> Languages
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="mt-6 p-4 bg-indigo-50/80 rounded-2xl text-xs text-indigo-800 border border-indigo-100">
+                <p class="font-bold mb-1">💡 API Usage:</p>
+                <code class="block truncate">/tts?text=Hello&voice=Adri</code>
+                <code class="block truncate mt-1">/tts?text=Hi&lang=hi</code>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="w-full md:w-2/3 p-6 overflow-y-auto relative">
+            
+            <!-- GENERATOR TAB -->
+            <div id="view-gen" class="space-y-5">
+                <h2 class="text-2xl font-bold text-gray-800">Create Audio</h2>
+                
+                <form id="ttsForm" class="space-y-4">
+                    <!-- Text Area -->
+                    <div class="relative group">
+                        <textarea name="text" id="textInput" rows="5" class="w-full p-4 rounded-2xl bg-white/80 border-2 border-transparent focus:border-indigo-400 focus:ring-0 outline-none transition shadow-sm resize-none text-gray-700 placeholder-gray-400" placeholder="What should I say today?"></textarea>
+                        <button type="button" id="micBtn" class="absolute bottom-3 right-3 text-gray-400 hover:text-red-500 transition p-2">
+                            <i class="fas fa-microphone text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Voice Character</label>
+                            <select name="voice" id="voiceSelect" class="w-full mt-1 p-3 rounded-xl bg-white/80 border-transparent focus:border-indigo-400 outline-none shadow-sm cursor-pointer">
+                                {% for v in voices %}
+                                <option value="{{ v.id }}">
+                                    {{ v.flag }} {{ v.person_name }} ({{ v.gender }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                             <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Speed</label>
+                             <div class="flex items-center h-full mt-1 bg-white/80 rounded-xl px-3 shadow-sm">
+                                 <span class="text-xs text-gray-400 mr-2">Slow</span>
+                                 <input type="range" name="rate" min="-50" max="50" value="0" class="w-full h-1 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                                 <span class="text-xs text-gray-400 ml-2">Fast</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="genBtn" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition transform hover:scale-[1.02] flex justify-center items-center gap-2">
+                        <span>Generate Speech</span>
+                        <i class="fas fa-magic"></i>
+                    </button>
+                </form>
+
+                <!-- Result Area -->
+                <div id="resultArea" class="hidden mt-6 bg-white/60 p-4 rounded-2xl border border-white/50 animate-pulse">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-bold text-indigo-900">Audio Ready</span>
+                        <div class="flex gap-2">
+                            <a id="dlBtn" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full transition cursor-pointer text-gray-700">
+                                <i class="fas fa-download"></i> Save
+                            </a>
+                        </div>
+                    </div>
+                    <audio id="player" controls class="w-full rounded-lg"></audio>
+                </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="view-hist" class="hidden space-y-5">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Recent History</h2>
+                    <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700 underline">Clear All</button>
+                </div>
+                <div id="historyList" class="space-y-3">
+                    <!-- History items injected here via JS -->
+                    <div class="text-center text-gray-400 mt-10">No history yet.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- Tab Switching ---
+        function switchTab(tab) {
+            document.getElementById('view-gen').classList.add('hidden');
+            document.getElementById('view-hist').classList.add('hidden');
+            document.getElementById('tab-gen').classList.remove('bg-indigo-100', 'text-indigo-700');
+            document.getElementById('tab-hist').classList.remove('bg-indigo-100', 'text-indigo-700');
+            
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('bg-indigo-100', 'text-indigo-700');
+            
+            if(tab === 'hist') renderHistory();
+        }
+
+        // --- Speech Recognition ---
+        const micBtn = document.getElementById('micBtn');
+        const textInput = document.getElementById('textInput');
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            micBtn.onclick = () => {
+                recognition.start();
+                micBtn.classList.add('text-red-600', 'animate-pulse');
+            };
+            recognition.onresult = (e) => {
+                textInput.value += e.results[0][0].transcript;
+                micBtn.classList.remove('text-red-600', 'animate-pulse');
+            };
+            recognition.onend = () => micBtn.classList.remove('text-red-600', 'animate-pulse');
+        } else { micBtn.style.display = 'none'; }
+
+        // --- TTS Generation ---
+        const form = document.getElementById('ttsForm');
+        const resultArea = document.getElementById('resultArea');
+        const player = document.getElementById('player');
+        const dlBtn = document.getElementById('dlBtn');
+        const genBtn = document.getElementById('genBtn');
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const text = formData.get('text');
+            const voice = formData.get('voice');
+            if(!text) return alert("Please enter text!");
+
+            // Adjust rate format
+            const rateVal = formData.get('rate');
+            formData.set('rate', (rateVal >= 0 ? '+' : '') + rateVal + '%');
+
+            // UI Loading
+            genBtn.disabled = true;
+            genBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+            resultArea.classList.add('hidden');
+
+            try {
+                // Use the API endpoint we created
+                const res = await fetch('/tts', { method: 'POST', body: formData });
+                
+                if(!res.ok) throw new Error("Generation failed");
+
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Play Audio
+                player.src = url;
+                resultArea.classList.remove('hidden', 'animate-pulse');
+                resultArea.classList.add('animate-fade-in');
+                player.play();
+
+                // Setup Download
+                dlBtn.href = url;
+                dlBtn.download = `sonic_tts_${Date.now()}.mp3`;
+
+                // Save to History
+                addToHistory(text, voice);
+
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                genBtn.disabled = false;
+                genBtn.innerHTML = '<span>Generate Speech</span> <i class="fas fa-magic"></i>';
+            }
+        };
+
+        // --- History Logic (Local Storage) ---
+        function addToHistory(text, voiceID) {
+            const history = JSON.parse(localStorage.getItem('tts_history') || '[]');
+            const newItem = {
+                text: text.substring(0, 60) + (text.length > 60 ? '...' : ''),
+                voice: voiceID,
+                date: new Date().toLocaleString()
+            };
+            history.unshift(newItem); // Add to top
+            if(history.length > 20) history.pop(); // Keep max 20
+            localStorage.setItem('tts_history', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('tts_history') || '[]');
+            
+            if(history.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-400 mt-10">No history yet.</div>';
+                return;
+            }
+
+            list.innerHTML = history.map(item => `
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-gray-700 text-sm">"${item.text}"</p>
+                        <p class="text-xs text-gray-400">${item.date} • ${item.voice.split('-')[2] || 'Voice'}</p>
+                    </div>
+                    <button onclick="fillFromHistory('${item.text}')" class="text-indigo-500 hover:text-indigo-700">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function fillFromHistory(txt) {
+            textInput.value = txt;
+            switchTab('gen');
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('tts_history');
+            renderHistory();
+        }
+    </script>
+</body>
+</html>
